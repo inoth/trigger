@@ -16,7 +16,7 @@ type DefaultOutput struct {
 }
 
 func (e *DefaultOutput) Output(acc accumulator.Accumulator) error {
-	fmt.Printf("[Output] matedata: %s\n", acc.String())
+	fmt.Printf("[%s][Output] matedata: %s\n", acc.GetMatedata("id"), acc.String())
 	acc.SetBody([]byte("step:Output"))
 	return nil
 }

@@ -1,7 +1,7 @@
 package accumulator
 
 type Accumulator interface {
-	GetMatedata(key string) (string, bool)
+	GetMatedata(key string) string
 
 	SetBody([]byte)
 	Body() []byte
@@ -20,9 +20,8 @@ func NewAccumulator(matedata map[string]string) Accumulator {
 	}
 }
 
-func (a *accumulator) GetMatedata(key string) (string, bool) {
-	val, ok := a.matedata[key]
-	return val, ok
+func (a *accumulator) GetMatedata(key string) string {
+	return a.matedata[key]
 }
 
 func (a *accumulator) SetBody(buf []byte) {

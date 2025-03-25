@@ -33,10 +33,10 @@ func (t *Trigger) Start(ctx context.Context) error {
 		case <-ctx.Done():
 			return ctx.Err()
 		case e := <-t.event:
-			if !e.CanExecute() {
-				t.event <- e
-				continue
-			}
+			// if !e.CanExecute() {
+			// 	t.event <- e
+			// 	continue
+			// }
 			go e.Execute(ctx)
 		default:
 		}

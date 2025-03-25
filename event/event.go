@@ -2,6 +2,7 @@ package event
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"time"
 
@@ -88,6 +89,14 @@ func (e *Event) CanExecute() bool {
 }
 
 func (e *Event) Execute(ctx context.Context) {
+
+	if e.delay > 0 {
+		tk := time.NewTicker(time.Duration(e.delay) * time.Second)
+		fmt.Println(e.metadata["id"], "延迟执行:", e.delay)
+		<-tk.C
+		defer tk.Stop()
+	}
+
 	inputCreator, ok := input.Inputs[e.input]
 	if !ok {
 		return

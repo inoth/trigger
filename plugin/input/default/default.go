@@ -16,7 +16,7 @@ type DefaultInput struct {
 }
 
 func (e *DefaultInput) Init(acc accumulator.Accumulator) error {
-	fmt.Printf("[Init] matedata: %s\n", acc.String())
+	fmt.Printf("[%s][Init] matedata: %s\n", acc.GetMatedata("id"), acc.String())
 	acc.SetBody([]byte("step:Init"))
 	return nil
 }

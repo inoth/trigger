@@ -16,7 +16,7 @@ type DefaultExecute struct {
 }
 
 func (e *DefaultExecute) Execute(acc accumulator.Accumulator) error {
-	fmt.Printf("[Execute] matedata: %s\n", acc.String())
+	fmt.Printf("[%s][Execute] matedata: %s\n", acc.GetMatedata("id"), acc.String())
 	acc.SetBody([]byte("step:Execute"))
 	return nil
 }
