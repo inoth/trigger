@@ -26,7 +26,7 @@ func TestNewTrigger(t *testing.T) {
 			go func() {
 				tg.AddEvent(event.NewEvent(
 					event.SetMetadata("id", fmt.Sprintf("%d", i)),
-					event.SetDelay(uint(i)),
+					event.SetDelay(uint(5-i)),
 				))
 			}()
 		}
