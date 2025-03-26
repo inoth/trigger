@@ -24,8 +24,6 @@ type Event struct {
 	output string
 	// 进入执行延迟（秒）
 	delay uint
-
-	executeAt time.Time
 }
 
 func NewEvent(opts ...EventOption) *Event {
@@ -38,9 +36,6 @@ func NewEvent(opts ...EventOption) *Event {
 	}
 	for _, opt := range opts {
 		opt(&e)
-	}
-	if e.delay > 0 {
-		e.executeAt = time.Now().Add(time.Duration(e.delay) * time.Second)
 	}
 	return &e
 }
@@ -82,10 +77,6 @@ func SetDelay(delay uint) EventOption {
 	return func(e *Event) {
 		e.delay = delay
 	}
-}
-
-func (e *Event) CanExecute() bool {
-	return e.delay == 0 || time.Now().After(e.executeAt)
 }
 
 func (e *Event) Execute(ctx context.Context) {
