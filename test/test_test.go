@@ -9,26 +9,25 @@ import (
 	"github.com/inoth/trigger"
 	"github.com/inoth/trigger/event"
 
-	_ "github.com/inoth/trigger/plugin/execute/default"
-	_ "github.com/inoth/trigger/plugin/input/default"
-	_ "github.com/inoth/trigger/plugin/output/default"
+	_ "github.com/inoth/trigger/plugin/after/all"
+	_ "github.com/inoth/trigger/plugin/before/all"
+	_ "github.com/inoth/trigger/plugin/execute/all"
 )
 
 func TestNewTrigger(t *testing.T) {
 	tg := trigger.New()
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
 	defer cancel()
 
 	go func() {
-		time.Sleep(time.Second * 2)
+		time.Sleep(time.Second * 1)
 		for i := range 5 {
-			go func() {
-				tg.AddEvent(event.NewEvent(
-					event.SetMetadata("id", fmt.Sprintf("%d", i)),
-					event.SetDelay(uint(5-i)),
-				))
-			}()
+			tg.SendEvent(event.NewEvent(
+				event.SetMetadata("id", fmt.Sprintf("%d", i)),
+				event.SetDelay(uint(5-i)),
+				event.SetExecute("transcode"),
+			))
 		}
 	}()
 

@@ -33,16 +33,12 @@ func (t *Trigger) Start(ctx context.Context) error {
 		case <-ctx.Done():
 			return ctx.Err()
 		case e := <-t.event:
-			// if !e.CanExecute() {
-			// 	t.event <- e
-			// 	continue
-			// }
 			go e.Execute(ctx)
 		default:
 		}
 	}
 }
 
-func (t *Trigger) AddEvent(e *event.Event) {
-	t.event <- *e
+func (t *Trigger) SendEvent(e event.Event) {
+	t.event <- e
 }

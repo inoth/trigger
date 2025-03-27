@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/inoth/trigger/accumulator"
+	"github.com/inoth/trigger/plugin/after"
+	"github.com/inoth/trigger/plugin/before"
 	"github.com/inoth/trigger/plugin/execute"
-	"github.com/inoth/trigger/plugin/input"
-	"github.com/inoth/trigger/plugin/output"
 )
 
 type EventOption func(*Event)
@@ -17,27 +17,27 @@ type EventOption func(*Event)
 type Event struct {
 	metadata map[string]string
 	// 初始化调用插件、获取原始数据
-	input string
+	eventBefore string
 	// 执行插件
-	execute string
+	eventExecute string
 	// 结束插件
-	output string
+	eventAfter string
 	// 进入执行延迟（秒）
 	delay uint
 }
 
-func NewEvent(opts ...EventOption) *Event {
+func NewEvent(opts ...EventOption) Event {
 	e := Event{
-		metadata: make(map[string]string),
-		input:    "default",
-		execute:  "default",
-		output:   "default",
-		delay:    0,
+		metadata:     make(map[string]string),
+		eventBefore:  "default",
+		eventExecute: "default",
+		eventAfter:   "default",
+		delay:        0,
 	}
 	for _, opt := range opts {
 		opt(&e)
 	}
-	return &e
+	return e
 }
 
 func SetMetadata(key, value string) EventOption {
@@ -46,30 +46,30 @@ func SetMetadata(key, value string) EventOption {
 	}
 }
 
-func SetInput(input string) EventOption {
-	if input == "" {
-		input = "default"
+func SetBefore(eventBefore string) EventOption {
+	if eventBefore == "" {
+		eventBefore = "default"
 	}
 	return func(e *Event) {
-		e.input = input
+		e.eventBefore = eventBefore
 	}
 }
 
-func SetExecute(execute string) EventOption {
-	if execute == "" {
-		execute = "default"
+func SetExecute(eventExecute string) EventOption {
+	if eventExecute == "" {
+		eventExecute = "default"
 	}
 	return func(e *Event) {
-		e.execute = execute
+		e.eventExecute = eventExecute
 	}
 }
 
-func SetOutput(output string) EventOption {
-	if output == "" {
-		output = "default"
+func SetAfter(eventAfter string) EventOption {
+	if eventAfter == "" {
+		eventAfter = "default"
 	}
 	return func(e *Event) {
-		e.output = output
+		e.eventAfter = eventAfter
 	}
 }
 
@@ -79,48 +79,55 @@ func SetDelay(delay uint) EventOption {
 	}
 }
 
-func (e *Event) Execute(ctx context.Context) {
+func (e *Event) before(acc accumulator.Accumulator) {
+	beforeCreator, ok := before.Befores[e.eventBefore]
+	if !ok {
+		return
+	}
+	err := beforeCreator().Before(acc)
+	if err != nil {
+		log.Printf("before error: %v", err)
+	}
+}
 
+func (e *Event) after(acc accumulator.Accumulator) {
+	afterCreator, ok := after.Afters[e.eventAfter]
+	if !ok {
+		return
+	}
+	err := afterCreator().After(acc)
+	if err != nil {
+		log.Printf("after error: %v", err)
+	}
+}
+
+func (e *Event) Execute(ctx context.Context) {
 	if e.delay > 0 {
 		tk := time.NewTicker(time.Duration(e.delay) * time.Second)
-		fmt.Println(e.metadata["id"], "延迟执行:", e.delay)
+		log.Printf("[%s]延迟执行：%ds\n", e.metadata["id"], e.delay)
 		<-tk.C
 		defer tk.Stop()
 	}
 
-	inputCreator, ok := input.Inputs[e.input]
-	if !ok {
-		return
-	}
-	executeCreator, ok := execute.Executes[e.execute]
-	if !ok {
-		return
-	}
-	outputCreator, ok := output.Outputs[e.output]
-	if !ok {
-		return
-	}
+	defer func(st time.Time) {
+		log.Printf("[%s]执行完毕，耗时：%v\n", e.metadata["id"], time.Since(st))
+	}(time.Now())
 
 	acc := accumulator.NewAccumulator(e.metadata)
 
-	inp := inputCreator()
-	err := inp.Init(acc)
+	e.before(acc)
+
+	executeCreator, ok := execute.Executes[e.eventExecute]
+	if !ok {
+		log.Printf("Execute event err %v\n", fmt.Errorf("execute %s not found", e.eventExecute))
+		return
+	}
+	err := executeCreator().Execute(acc)
 	if err != nil {
-		log.Printf("Init event err %s", err)
+		log.Printf("Execute event err %v\n", err)
 		return
 	}
 
-	exc := executeCreator()
-	err = exc.Execute(acc)
-	if err != nil {
-		log.Printf("Execute event err %s", err)
-		return
-	}
+	e.after(acc)
 
-	outp := outputCreator()
-	err = outp.Output(acc)
-	if err != nil {
-		log.Printf("Output event err %s", err)
-		return
-	}
 }
