@@ -2,7 +2,6 @@ package test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -24,7 +23,7 @@ func TestNewTrigger(t *testing.T) {
 		time.Sleep(time.Second * 1)
 		for i := range 5 {
 			tg.SendEvent(event.NewEvent(
-				event.SetMetadata("id", fmt.Sprintf("%d", i)),
+				event.SetMetadata("url", "http://www.baidu.com"),
 				event.SetDelay(uint(5-i)),
 				event.SetExecute("transcode"),
 			))

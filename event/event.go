@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/inoth/trigger/accumulator"
+	"github.com/inoth/trigger/internal/util"
 	"github.com/inoth/trigger/plugin/after"
 	"github.com/inoth/trigger/plugin/before"
 	"github.com/inoth/trigger/plugin/execute"
@@ -15,6 +16,7 @@ import (
 type EventOption func(*Event)
 
 type Event struct {
+	id       string
 	metadata map[string]string
 	// 初始化调用插件、获取原始数据
 	eventBefore string
@@ -28,6 +30,7 @@ type Event struct {
 
 func NewEvent(opts ...EventOption) Event {
 	e := Event{
+		id:           util.UUID(),
 		metadata:     make(map[string]string),
 		eventBefore:  "default",
 		eventExecute: "default",
@@ -101,16 +104,19 @@ func (e *Event) after(acc accumulator.Accumulator) {
 	}
 }
 
+func (e *Event) PluginID() string {
+	return e.id
+}
+
 func (e *Event) Execute(ctx context.Context) {
 	if e.delay > 0 {
 		tk := time.NewTicker(time.Duration(e.delay) * time.Second)
-		log.Printf("[%s]延迟执行：%ds\n", e.metadata["id"], e.delay)
-		<-tk.C
 		defer tk.Stop()
+		<-tk.C
 	}
 
 	defer func(st time.Time) {
-		log.Printf("[%s]执行完毕，耗时：%v\n", e.metadata["id"], time.Since(st))
+		log.Printf("[%s]执行完毕，耗时：%v\n", e.PluginID(), time.Since(st))
 	}(time.Now())
 
 	acc := accumulator.NewAccumulator(e.metadata)
@@ -129,5 +135,4 @@ func (e *Event) Execute(ctx context.Context) {
 	}
 
 	e.after(acc)
-
 }

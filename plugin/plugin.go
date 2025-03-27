@@ -2,6 +2,10 @@ package plugin
 
 import "github.com/inoth/trigger/accumulator"
 
+type PluginID interface {
+	PluginID() string
+}
+
 type Before interface {
 	Before(accumulator.Accumulator) error
 }
